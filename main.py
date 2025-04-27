@@ -20,6 +20,7 @@ import random
 import time
 import ast
 import copy
+import wandb
 from pathlib import Path
 
 import numpy as np
@@ -40,7 +41,7 @@ def get_args_parser():
     parser = argparse.ArgumentParser("Set transformer detector", add_help=False)
     parser.add_argument("--lr", default=1e-4, type=float)
     parser.add_argument("--lr_encoder", default=1.5e-4, type=float)
-    parser.add_argument("--batch_size", default=2, type=int)
+    parser.add_argument("--batch_size", default=8, type=int)
     parser.add_argument("--weight_decay", default=1e-4, type=float)
     parser.add_argument("--epochs", default=12, type=int)
     parser.add_argument("--lr_drop", default=11, type=int)
@@ -251,7 +252,7 @@ def get_args_parser():
     parser.add_argument("--dataset_file", default="coco")
     parser.add_argument(
         "--coco_path",
-        default=r"D:\Dataset\doclaynet\doclaynet_yolo_dataset_chart\images",
+        default=r"D:\Dataset\doclaynet\doclaynet_yolo_dataset_v1\images",
         type=str,
     )
     parser.add_argument("--square_resize_div_64", action="store_true")
@@ -339,6 +340,9 @@ def get_args_parser():
 
 
 def main(args):
+    wandb.login()
+    logger = wandb.init(project="trifuse-lwdetr", config=args)
+
     utils.init_distributed_mode(args)
     print("git:\n  {}\n".format(utils.get_sha()))
     print(args)
@@ -626,6 +630,7 @@ def main(args):
 
             # for evaluation logs
             if coco_evaluator is not None:
+                logger.log(coco_evaluator.get_metrics())
                 (output_dir / "eval").mkdir(exist_ok=True)
                 if "bbox" in coco_evaluator.coco_eval:
                     filenames = ["latest.pth"]
