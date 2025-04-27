@@ -625,6 +625,8 @@ def main(args):
         epoch_time_str = str(datetime.timedelta(seconds=int(epoch_time)))
         log_stats["epoch_time"] = epoch_time_str
 
+        logger.log(log_stats)
+
         if args.output_dir and utils.is_main_process():
             with (output_dir / "log.txt").open("a") as f:
                 f.write(json.dumps(log_stats) + "\n")
