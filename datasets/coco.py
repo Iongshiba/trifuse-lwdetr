@@ -16,7 +16,8 @@ COCO dataset which returns image_id for evaluation.
 Mostly copy-paste from https://github.com/pytorch/vision/blob/13b35ff/references/detection/coco_utils.py
 """
 from pathlib import Path
-
+import os
+import random
 import torch
 import torch.utils.data
 import torchvision
@@ -177,7 +178,7 @@ def make_coco_transforms_square_div_64(image_set):
     raise ValueError(f"unknown {image_set}")
 
 
-def build(image_set, args):
+def build_coco(image_set, args):
     root = Path(args.coco_path)
     assert root.exists(), f"provided COCO path {root} does not exist"
     mode = "instances"
@@ -221,6 +222,39 @@ def build(image_set, args):
     PATHS = {
         "train": (root / "train", root / f"train.json"),
         "val": (root / "val", root / f"val.json"),
+    }
+
+    img_folder, ann_file = PATHS[image_set.split("_")[0]]
+
+    try:
+        square_resize = args.square_resize
+    except:
+        square_resize = False
+
+    try:
+        square_resize_div_64 = args.square_resize_div_64
+    except:
+        square_resize_div_64 = False
+
+    if square_resize_div_64:
+        dataset = CocoDetection(
+            img_folder,
+            ann_file,
+            transforms=make_coco_transforms_square_div_64(image_set),
+        )
+    else:
+        dataset = CocoDetection(
+            img_folder, ann_file, transforms=make_coco_transforms(image_set)
+        )
+    return dataset
+
+
+def build_doclaynet(image_set, args):
+    root = Path(args.coco_path)
+    assert root.exists(), f"provided COCO path {root} does not exist"
+    PATHS = {
+        "train": (root / "PNG", root / f"COCO/train.json"),
+        "val": (root / "PNG", root / f"COCO/val.json"),
     }
 
     img_folder, ann_file = PATHS[image_set.split("_")[0]]
