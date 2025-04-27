@@ -341,8 +341,10 @@ def get_args_parser():
 
 
 def main(args):
-    wandb.login()
-    logger = wandb.init(project="trifuse-lwdetr", config=args)
+    logger = None
+    if utils.is_main_process():
+        wandb.login()
+        logger = wandb.init(project="trifuse-lwdetr", config=args)
 
     utils.init_distributed_mode(args)
     print("git:\n  {}\n".format(utils.get_sha()))
@@ -438,6 +440,10 @@ def main(args):
         bm = benchmark(benchmark_model.float(), dataset_val, output_dir)
         print(json.dumps(bm, indent=2))
         del benchmark_model
+        if logger is not None:
+            logger.log(
+                {"benchmark": bm}
+            )  # Add this if you want to log benchmark results
 
     if args.resume:
         checkpoint = torch.load(args.resume, map_location="cpu")
@@ -625,8 +631,6 @@ def main(args):
         epoch_time_str = str(datetime.timedelta(seconds=int(epoch_time)))
         log_stats["epoch_time"] = epoch_time_str
 
-        logger.log(log_stats)
-
         if args.output_dir and utils.is_main_process():
             with (output_dir / "log.txt").open("a") as f:
                 f.write(json.dumps(log_stats) + "\n")
@@ -644,6 +648,13 @@ def main(args):
                             coco_evaluator.coco_eval["bbox"].eval,
                             output_dir / "eval" / name,
                         )
+
+        if utils.is_main_process() and logger is not None:
+            logger.log(log_stats)
+
+            # And for the evaluator metrics
+            if coco_evaluator is not None:
+                logger.log(coco_evaluator.get_metrics())
 
     total_time = time.time() - start_time
     total_time_str = str(datetime.timedelta(seconds=int(total_time)))
