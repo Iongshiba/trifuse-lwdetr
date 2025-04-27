@@ -341,14 +341,14 @@ def get_args_parser():
 
 
 def main(args):
+    utils.init_distributed_mode(args)
+    print("git:\n  {}\n".format(utils.get_sha()))
+    print(args)
+
     logger = None
     if utils.is_main_process():
         wandb.login()
         logger = wandb.init(project="trifuse-lwdetr", config=args)
-
-    utils.init_distributed_mode(args)
-    print("git:\n  {}\n".format(utils.get_sha()))
-    print(args)
 
     device = torch.device(args.device)
 
