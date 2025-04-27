@@ -45,6 +45,7 @@ def get_args_parser():
     parser.add_argument("--weight_decay", default=1e-4, type=float)
     parser.add_argument("--epochs", default=12, type=int)
     parser.add_argument("--lr_drop", default=11, type=int)
+    parser.add_argument("--num_classes", default=1, type=int)
     parser.add_argument(
         "--clip_max_norm", default=0.1, type=float, help="gradient clipping max norm"
     )
