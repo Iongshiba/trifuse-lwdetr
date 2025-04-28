@@ -442,10 +442,10 @@ def main(args):
         bm = benchmark(benchmark_model.float(), dataset_val, output_dir)
         print(json.dumps(bm, indent=2))
         del benchmark_model
-        if logger is not None:
-            logger.log(
-                {"benchmark": bm}
-            )  # Add this if you want to log benchmark results
+        # if logger is not None:
+        #     logger.log(
+        #         {"benchmark": bm}
+        #     )  # Add this if you want to log benchmark results
 
     if args.resume:
         checkpoint = torch.load(args.resume, map_location="cpu")
@@ -639,7 +639,6 @@ def main(args):
 
             # for evaluation logs
             if coco_evaluator is not None:
-                logger.log(coco_evaluator.get_metrics())
                 (output_dir / "eval").mkdir(exist_ok=True)
                 if "bbox" in coco_evaluator.coco_eval:
                     filenames = ["latest.pth"]
