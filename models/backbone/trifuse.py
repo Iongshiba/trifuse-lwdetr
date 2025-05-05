@@ -141,8 +141,9 @@ class TriFuse(nn.Module):
         **kwargs,
     ):
         super().__init__()
-        conv_dims = (int(fpn_dim / 8), int(fpn_dim / 4), int(fpn_dim / 2), int(fpn_dim))
-        embed_dim = int(fpn_dim / 8)
+        # conv_dims = (int(fpn_dim / 8), int(fpn_dim / 4), int(fpn_dim / 2), int(fpn_dim))
+        conv_dims = tuple([int(fpn_dim / 2**i) for i in range(len(depths) - 1, -1, -1)])
+        embed_dim = conv_dims[0]
         self._out_feature_channels = [*conv_dims]
         ###### Local Branch Setting #######
 
@@ -154,7 +155,7 @@ class TriFuse(nn.Module):
         self.downsample_layers.append(stem)
 
         # stage2-4 downsample
-        for i in range(3):
+        for i in range(2):
             downsample_layer = nn.Sequential(
                 LayerNorm(conv_dims[i], eps=1e-6, data_format="channels_first"),
                 nn.Conv2d(conv_dims[i], conv_dims[i + 1], kernel_size=2, stride=2),
@@ -169,7 +170,7 @@ class TriFuse(nn.Module):
         cur = 0
 
         # Build stacks of blocks in each stage
-        for i in range(4):
+        for i in range(3):
             stage = nn.Sequential(
                 *[
                     Local_block(dim=conv_dims[i], drop_rate=dp_rates[cur + j])
@@ -248,20 +249,20 @@ class TriFuse(nn.Module):
             use_checkpoint=use_checkpoint,
         )
 
-        i_layer = 3
-        self.layers4 = BasicLayer(
-            dim=int(embed_dim * 2**i_layer),
-            depth=depths[i_layer],
-            num_heads=num_heads[i_layer],
-            window_size=window_size,
-            qkv_bias=qkv_bias,
-            drop=drop_rate,
-            attn_drop=attn_drop_rate,
-            drop_path=dpr[sum(depths[:i_layer]) : sum(depths[: i_layer + 1])],
-            norm_layer=norm_layer,
-            downsample=PatchMerging if (i_layer > 0) else None,
-            use_checkpoint=use_checkpoint,
-        )
+        # i_layer = 3
+        # self.layers4 = BasicLayer(
+        #     dim=int(embed_dim * 2**i_layer),
+        #     depth=depths[i_layer],
+        #     num_heads=num_heads[i_layer],
+        #     window_size=window_size,
+        #     qkv_bias=qkv_bias,
+        #     drop=drop_rate,
+        #     attn_drop=attn_drop_rate,
+        #     drop_path=dpr[sum(depths[:i_layer]) : sum(depths[: i_layer + 1])],
+        #     norm_layer=norm_layer,
+        #     downsample=PatchMerging if (i_layer > 0) else None,
+        #     use_checkpoint=use_checkpoint,
+        # )
 
         ###### Hierachical Feature Fusion Block Setting #######
 
@@ -289,14 +290,14 @@ class TriFuse(nn.Module):
             ch_out=conv_dims[2],
             drop_rate=HFF_dp,
         )
-        self.fu4 = HFF_block(
-            ch_1=conv_dims[3],
-            ch_2=conv_dims[3],
-            r_2=16,
-            ch_int=conv_dims[3],
-            ch_out=conv_dims[3],
-            drop_rate=HFF_dp,
-        )
+        # self.fu4 = HFF_block(
+        #     ch_1=conv_dims[3],
+        #     ch_2=conv_dims[3],
+        #     r_2=16,
+        #     ch_int=conv_dims[3],
+        #     ch_out=conv_dims[3],
+        #     drop_rate=HFF_dp,
+        # )
 
         ###### Feature Pyramid Network Setting ######
         # Use fpn_dim for output channels
@@ -319,7 +320,7 @@ class TriFuse(nn.Module):
             nn.init.trunc_normal_(m.weight, std=0.2)
             nn.init.constant_(m.bias, 0)
 
-    def forward(self, imgs, targets=None):
+    def forward(self, imgs):
         # images (224, 224, 3)
 
         ######  Global Branch ######
@@ -329,7 +330,7 @@ class TriFuse(nn.Module):
         x_s_1, H, W = self.layers1(x_s, H_embed, W_embed)
         x_s_2, H, W = self.layers2(x_s_1, H, W)
         x_s_3, H, W = self.layers3(x_s_2, H, W)
-        x_s_4, H, W = self.layers4(x_s_3, H, W)
+        # x_s_4, H, W = self.layers4(x_s_3, H, W)
 
         # [B,L,C] ---> [B,C,H,W]
 
@@ -341,8 +342,8 @@ class TriFuse(nn.Module):
         x_s_2 = x_s_2.view(x_s_2.shape[0], -1, H_embed // 2, W_embed // 2)
         x_s_3 = torch.transpose(x_s_3, 1, 2)
         x_s_3 = x_s_3.view(x_s_3.shape[0], -1, H_embed // 4, W_embed // 4)
-        x_s_4 = torch.transpose(x_s_4, 1, 2)
-        x_s_4 = x_s_4.view(x_s_4.shape[0], -1, H_embed // 8, W_embed // 8)
+        # x_s_4 = torch.transpose(x_s_4, 1, 2)
+        # x_s_4 = x_s_4.view(x_s_4.shape[0], -1, H_embed // 8, W_embed // 8)
 
         # print("Global Branch")
         # print(x_s_1.shape)
@@ -357,8 +358,8 @@ class TriFuse(nn.Module):
         x_c_2 = self.stages[1](x_c)
         x_c = self.downsample_layers[2](x_c_2)
         x_c_3 = self.stages[2](x_c)
-        x_c = self.downsample_layers[3](x_c_3)
-        x_c_4 = self.stages[3](x_c)
+        # x_c = self.downsample_layers[3](x_c_3)
+        # x_c_4 = self.stages[3](x_c)
 
         # print("Local Branch")
         # print(x_c_1.shape)
@@ -370,7 +371,7 @@ class TriFuse(nn.Module):
         x_f_1 = self.fu1(x_c_1, x_s_1, None)
         x_f_2 = self.fu2(x_c_2, x_s_2, x_f_1)
         x_f_3 = self.fu3(x_c_3, x_s_3, x_f_2)
-        x_f_4 = self.fu4(x_c_4, x_s_4, x_f_3)
+        # x_f_4 = self.fu4(x_c_4, x_s_4, x_f_3)
 
         # print("Hierachical Feature Fusion")
         # print(x_f_1.shape)
@@ -397,12 +398,12 @@ class TriFuse(nn.Module):
         # print(x_p_4.shape)
 
         ###### Feature Fusion ######
-        x_4 = F.interpolate(x_f_4, scale_factor=8, mode="bilinear", align_corners=False)
+        # x_4 = F.interpolate(x_f_4, scale_factor=8, mode="bilinear", align_corners=False)
         x_3 = F.interpolate(x_f_3, scale_factor=4, mode="bilinear", align_corners=False)
         x_2 = F.interpolate(x_f_2, scale_factor=2, mode="bilinear", align_corners=False)
         x_1 = x_f_1
 
-        x_fu = [x_4, x_3, x_2, x_1]
+        x_fu = [x_3, x_2, x_1]
 
         return x_fu
         # return self.head(x_f)
@@ -652,7 +653,8 @@ class WindowAttention(nn.Module):
         coords_h = torch.arange(self.window_size[0])
         coords_w = torch.arange(self.window_size[1])
         coords = torch.stack(
-            torch.meshgrid([coords_h, coords_w], indexing="ij")
+            # torch.meshgrid([coords_h, coords_w], indexing="ij")
+            torch.meshgrid([coords_h, coords_w])
         )  # [2, Mh, Mw]
         # coords = [
         #     [
@@ -1143,6 +1145,15 @@ class PatchMerging(nn.Module):
         x = self.reduction(x)  # [B, H/2*W/2, 2*C]
 
         return x
+
+
+def TriFuse_Tiny_caev2():
+    model = TriFuse(
+        depths=(2, 2, 2),
+        conv_depths=(2, 2, 2),
+        fpn_dim=192,
+    )
+    return model
 
 
 def TriFuse_Tiny(fpn_dim: int = 256):  # Add fpn_dim

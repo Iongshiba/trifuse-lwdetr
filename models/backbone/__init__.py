@@ -54,6 +54,7 @@ def build_backbone(args):
         "mobilenetv3_large_1.0",
         "trifuse_tiny",
         "trifuse_small",
+        "trifuse_tiny_caev2",
     ]:
 
         backbone = Backbone(

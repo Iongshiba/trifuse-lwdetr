@@ -39,12 +39,12 @@ from util.benchmark import benchmark
 
 def get_args_parser():
     parser = argparse.ArgumentParser("Set transformer detector", add_help=False)
-    parser.add_argument("--lr", default=1e-4, type=float)
-    parser.add_argument("--lr_encoder", default=1.5e-4, type=float)
+    parser.add_argument("--lr", default=4e-4, type=float)
+    parser.add_argument("--lr_encoder", default=6e-4, type=float)
     parser.add_argument("--batch_size", default=8, type=int)
     parser.add_argument("--weight_decay", default=1e-4, type=float)
-    parser.add_argument("--epochs", default=12, type=int)
-    parser.add_argument("--lr_drop", default=11, type=int)
+    parser.add_argument("--epochs", default=100, type=int)
+    parser.add_argument("--lr_drop", default=30, type=int)
     parser.add_argument("--num_classes", default=1, type=int)
     parser.add_argument(
         "--clip_max_norm", default=0.1, type=float, help="gradient clipping max norm"
@@ -114,7 +114,7 @@ def get_args_parser():
     # * Backbone
     parser.add_argument(
         "--encoder",
-        default="trifuse_tiny",
+        default="trifuse_tiny_caev2",
         type=str,
         help="Name of the transformer or convolutional encoder to use",
     )
@@ -250,7 +250,7 @@ def get_args_parser():
     parser.add_argument("--ia_bce_loss", action="store_true")
 
     # dataset parameters
-    parser.add_argument("--dataset_file", default="coco")
+    parser.add_argument("--dataset_file", default="chartrec")
     parser.add_argument(
         "--coco_path",
         default=r"D:\Dataset\doclaynet\doclaynet_yolo_dataset_v1\images",
@@ -269,6 +269,10 @@ def get_args_parser():
     )
     parser.add_argument("--seed", default=42, type=int)
     parser.add_argument("--resume", default="", help="resume from checkpoint")
+    parser.add_argument(
+        "--pretrained",
+        default=r"C:\Users\trand\longg\document\selfstudy\hifuse\reference\LW-DETR-main\wandb\trifuse_lwdetr_caev2.pth",
+    )
     parser.add_argument(
         "--start_epoch", default=0, type=int, metavar="N", help="start epoch"
     )
@@ -372,6 +376,16 @@ def main(args):
             model, device_ids=[args.gpu], find_unused_parameters=True
         )
         model_without_ddp = model.module
+    # torch.save(
+    #     model_without_ddp.state_dict(),
+    #     r"C:\Users\trand\longg\document\selfstudy\hifuse\reference\LW-DETR-main\wandb\trifuse_lwdetr_ori.pth",
+    # )
+    # return
+
+    if args.pretrained:
+        ckpt = torch.load(args.pretrained)
+        model_without_ddp.load_state_dict(ckpt)
+
     n_parameters = sum(p.numel() for p in model.parameters() if p.requires_grad)
     print("number of params:", n_parameters)
     param_dicts = get_param_dict(args, model_without_ddp)
@@ -666,7 +680,69 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         "LWDETR training and evaluation script", parents=[get_args_parser()]
     )
-    args = parser.parse_args()
+    args = parser.parse_args(
+        [
+            "--lr",
+            "4e-4",
+            "--lr_encoder",
+            "6e-4",
+            "--batch_size",
+            "8",
+            "--weight_decay",
+            "1e-4",
+            "--epochs",
+            "30",
+            "--lr_drop",
+            "30",
+            "--lr_vit_layer_decay",
+            "0.8",
+            "--lr_component_decay",
+            "1.0",
+            "--encoder",
+            "trifuse_tiny_caev2",
+            "--vit_encoder_num_layers",
+            "6",
+            "--window_block_indexes",
+            "0",
+            "2",
+            "4",
+            "--out_feature_indexes",
+            "1",
+            "3",
+            "5",
+            "--dec_layers",
+            "3",
+            "--group_detr",
+            "13",
+            "--two_stage",
+            "--projector_scale",
+            "P4",
+            "--hidden_dim",
+            "256",
+            "--sa_nheads",
+            "8",
+            "--ca_nheads",
+            "16",
+            "--dec_n_points",
+            "2",
+            "--bbox_reparam",
+            "--lite_refpoint_refine",
+            "--num_queries",
+            "100",
+            "--ia_bce_loss",
+            "--cls_loss_coef",
+            "1",
+            "--num_select",
+            "100",
+            "--dataset_file",
+            "chartrec",
+            "--coco_path",
+            r"D:\Dataset\doclaynet\doclaynet_yolo_dataset_v1\images",
+            "--use_ema",
+            "--output_dir",
+            f"output",
+        ]
+    )
 
     if args.output_dir:
         Path(args.output_dir).mkdir(parents=True, exist_ok=True)

@@ -24,7 +24,7 @@ from .base import BackboneBase
 from .vit import ViT
 from .presnet import PResNet
 from .projector import MultiScaleProjector
-from .trifuse import TriFuse_Tiny
+from .trifuse import TriFuse_Tiny, TriFuse_Tiny_caev2
 
 __all__ = ["Backbone"]
 
@@ -124,6 +124,8 @@ class Backbone(BackboneBase):
         elif "trifuse" in name:
             if name == "trifuse_tiny":
                 self.encoder = TriFuse_Tiny()
+            if name == "trifuse_tiny_caev2":
+                self.encoder = TriFuse_Tiny_caev2()
             else:
                 raise NotImplementedError("Backbone {} is not suport now.".format(name))
         else:
