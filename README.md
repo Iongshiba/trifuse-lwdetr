@@ -1,5 +1,9 @@
 # TriFuse: a Feature Fusion approach for Chart Detection
 
+## Chart Detection Dataset
+
+ChartRec: https://www.kaggle.com/datasets/longshiba/chart-detection-v4
+
 ## Method
 
 ### Backbone
