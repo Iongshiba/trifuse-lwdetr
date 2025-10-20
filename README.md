@@ -1,4 +1,4 @@
-# TriFuse: a Feature Fusion approach for Chart Detection
+# TriFuse: A Feature Fusion Approach for Chart Detection
 
 ## Chart Detection Dataset
 
@@ -10,17 +10,17 @@ ChartRec: https://www.kaggle.com/datasets/longshiba/chart-detection-v4
 
 We utilize the fusion feature of HiFuse architecture to fuse Global features and Local features for small image size (224):
 
-- Global Block: utilize the parallel computing and temporal feature extracting of Transformer blocks to capture long distance dependencies, hence the name Global.
-- Local Block: utilize the inductive bias of Convolution blocks to extract small features that are "invisible" to Transformer.
-- HFF Block: fuse features map from Global and Local blocks.
+- Global Block: utilize parallel computing and temporal feature extraction of Transformer blocks to capture long distance dependencies, hence the name Global.
+- Local Block: utilize the inductive bias of Convolution blocks to extract small features that are "invisible" to Transformers.
+- HFF Block: fuse features maps from Global and Local blocks.
 
 ### Head
 
-End-to-end Object Detection has recently received its attention due to the emergence of DETR. Therefore, we hypothesize that by fusing the rich feature maps from each stage of HFF blocks (using C2f block from YOLOv8) combine with a light-weight variant of DETR, the result will be promising.
+End-to-end Object Detection has recently received its attention due to the emergence of DETR. Therefore, we hypothesize that by fusing the rich feature maps from each stage of HFF blocks (using the C2f block from YOLOv8) combined with a lightweight variant of DETR, the result will be promising.
 
-- We cut one stage of HiFuse making it contains only 3 HFF blocks, hence "TriFuse", then we utilize the architecture from LW-DETR which extracts feature maps at each stage from TriFuse and fuse them using C2f block from YOLOv8.
-- The whole process is and End-to-End Detection, hence no hand-crafted anchor boxes is required, we use learnable queries instead (stated in DETR).
-- The research is reaching final state, final results coming soon...
+- We cut one stage of HiFuse, making it contain only three HFF blocks, hence "TriFuse", then we utilize the architecture from LW-DETR which extracts feature maps at each stage from TriFuse and fuse them using C2f block from YOLOv8.
+- The whole process is an End-to-End Detection model; hence, no hand-crafted anchor boxes are required, we use learnable queries instead (stated in DETR).
+- The research is reaching its final stage; final results coming soon.
 
 ### Training
 
