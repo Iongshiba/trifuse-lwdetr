@@ -1,4 +1,4 @@
-# TriFuse: A Feature Fusion Approach for Chart Detection
+# ChartDec: HiFuse + LW-DETR
 
 ## Chart Detection Dataset
 
